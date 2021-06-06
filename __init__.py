@@ -11,8 +11,19 @@ SKILL_NAME='FH-SWF Kontaktsuche'
 def searchFor(queryName):
     """Queries for a given name within data available at www.fh-swf.de
 
-    Fires up an http post request to the elastic search proxy which is used for global search at the website www.fh-swf.de.
+    Fires up an http post request to the elastic search proxy which is used for global search at the website www.fh-swf.de/de/search/search.php.
+    The query is set up to filter by employees and using the surname as query for the field "name".
+    It returns a 'hits' array in the response which also has a 'hits' array - sorted by '_score' value. 
     
+    Parameters
+    ----------
+    queryName: string
+        The surname of a person to look for.
+
+    Returns
+    -------
+    searchResponse: dict
+        Elasticsearch response as dict.
     """
     
     fhSwfSearchUrl = 'https://www.fh-swf.de/es_search_proxy/index.php'
@@ -46,15 +57,52 @@ def searchFor(queryName):
     return searchResponse
 
 class FhSwfSearchSkill(MycroftSkill):
+    """FhSwfSearchSkill provides mycroft with the ability to query for contact information of employees and lecturers.
+
+    It utilizes the current search proxy which is used within the website at www.fh-swf.de/de/search/search.php for Elasticsearch.
+    to query for a surname of a person, to handle queries to obtain contact information of employees and lecturers.
+    """
+
     def __init__(self):
         super(FhSwfSearchSkill, self).__init__(name=SKILL_NAME)
 
     def initialize(self):
+        """Skill setup after initialization with Mycroft.
+
+        Registers entity files used by the skill.
+        """
+
         self.register_entity_file('appellation.entity')
         self.register_entity_file('title.entity')
         self.register_entity_file('location.entity')
 
-    def getContactDetailsForPersonByName(self, appellation, name, title,):
+    def getContactDetailsForPersonByName(self, appellation, name, title):
+        """Calls the searchFor() function to generate a response to a contact query to speak from Mycroft.
+        Before calling searchFor() spells the name back to the user, to get confirmation if it is the right query string.
+        If not, the user can retry to pass the name. This happens 2 times at max. After that, the Skill will exit with a 
+        failure message.
+
+        If the resultset has more than one result for a surname because more people have the same surname, then we speak the first two
+        and asks if the queried person was one of the two. If not, the next 2 will be spoken and again a yes-no question will be triggered.
+        
+        Parameters
+        ----------
+        apellation: string
+            The appellation before academic title from queried name, due to german grammar. In this case herr, herrn or frau from appellation.entity
+            (e.g. Herr Professor Dr.). Used to speak a whole title of a person's name.
+
+        name: string
+            Surname of the lecturer or employee to look for.
+
+        title: string
+            Academic title which comes from the query, to speak it together with name (like appellation).
+
+        Returns
+        -------
+        dictionary: dict
+            A dictionary containing contact details of the queried person or -1 if query was unsuccessful or / and therefore empty.
+        """
+
         if not name:
             name = self.get_response('did.not.understand.name')
             self.log.info("name is now: " + name)
@@ -134,6 +182,9 @@ class FhSwfSearchSkill(MycroftSkill):
 
     @intent_handler('which.information.have.you.got.about.person.xyz.intent')
     def handleFullInformationQuery(self, message):
+        """Handles the query for a full output of contact details of a person.
+        """
+
         self.log.info(message.serialize())
 
         appellation = message.data.get('appellation') or ""
@@ -164,6 +215,9 @@ class FhSwfSearchSkill(MycroftSkill):
 
     @intent_handler('where.do.i.find.person.xyz.intent')
     def handleOfficeQuery(self, message):
+        """Handles the query for where to find a persons office / location.
+        """
+
         self.log.info(message.serialize())
 
         appellation = message.data.get('appellation') or ""
@@ -191,6 +245,9 @@ class FhSwfSearchSkill(MycroftSkill):
 
     @intent_handler('how.can.i.contact.person.xyz.intent')
     def handleHowToContactQuery(self, message):
+        """Handles the query for a persons contact data (phone number and email address).
+        """
+        
         self.log.info(message.serialize())
 
         appellation = message.data.get('appellation') or ""
