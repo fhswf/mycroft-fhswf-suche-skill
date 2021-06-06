@@ -1,0 +1,3 @@
+Das Büro von {title} {first_name} {name} befindet sich in Raum {building_room}, {building_address}, {building_postalCode}, {mail_city}
+{title} {first_name} {name} ist in Raum {building_room}, {building_address}, {building_postalCode}, {mail_city} anzutreffen
+Das Büro von {title} {first_name} {name} ist in {building_room}, {building_address}, {building_postalCode}, {mail_city}

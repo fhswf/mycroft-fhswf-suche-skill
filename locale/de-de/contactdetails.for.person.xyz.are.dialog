@@ -1,0 +1,3 @@
+Die Telefonnummer von {title} {first_name} {name} lautet {phone} und die Mailaddresse ist {email}
+Die Telefonnummer von {title} {first_name} {name} ist {phone} und die Mailadresse lautet {email}
+Für {title} {first_name} {name} habe ich die Telefonnummer {phone} und die Mailadresse {email} gefunden.
