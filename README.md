@@ -1,4 +1,4 @@
-# <img src="https://raw.githack.com/FortAwesome/Font-Awesome/master/svgs/solid/address-card.svg" card_color="#39659F" width="50" height="50" style="vertical-align:bottom"/>Mycroft FH-SWF Kontaktsuche
+# <img src="https://raw.githack.com/FortAwesome/Font-Awesome/master/svgs/solid/address-card.svg" card_color="#39659F" width="50" height="50" style="vertical-align:bottom"/> Mycroft FH-SWF Kontaktsuche
 Dieser Skill ist als Teil der Bachelorarbeit von [Silvio Marra](https://github.com/12io) entstanden und lässt Mycroft eine Suche nach Kontaktdaten einer Person auf der [Webseite der FH-SWF](https://www.fh-swf.de/) durchführen.
 
 
