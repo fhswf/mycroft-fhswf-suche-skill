@@ -32,20 +32,145 @@ def searchFor(queryName):
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                     }
+    """Due to a change how the FH-SWF CMS queries the ElasticSearch, the payload needs to be fixed. Following solution is TEMPORARILY for the presentation at the "Kolloquium"
+       and gets fixed, soon after.
+    """
+    # queryPayload = {
+    #     "size": 15,
+    #     "query": {
+    #         "bool": {
+    #             "filter": [{"terms": {"content_type.keyword": ["employee"]}}],
+    #             "must": [{"term": {"availableForSearch": {"value": "true"}}},
+    #             {"query_string": {"fields": ["name"], "query": '"' + queryName + '"'}}]}},
+    #     "_source": ["title","first_name","name","email","phone","department","building_room","building_address","building_postalCode","mail_city"],
+    #     "highlight": {"fields": {"name": {}}},
+    #     "track_scores": "true",
+    #     "sort": [{"_score": {"order": "desc"}}]
+    # }
 
     queryPayload = {
-        "size": 15,
+        "highlight": {
+            "pre_tags": ["<strong>"],
+            "post_tags": ["</strong>"],
+            "fields": [{
+                "title": {
+                    "number_of_fragments": 5,
+                    "no_match_size": 100,
+                    "fragment_size": 100
+                }
+            }, {
+                "short_text": {
+                    "number_of_fragments": 5,
+                    "no_match_size": 300,
+                    "fragment_size": 300
+                }
+            }]
+        },
+        "size": 10,
         "query": {
-            "bool": {
-                "filter": [{"terms": {"content_type.keyword": ["employee"]}}],
-                "must": [{"term": {"availableForSearch": {"value": "true"}}},
-                {"query_string": {"fields": ["name"], "query": '"' + queryName + '"'}}]}},
-        "_source": ["title","first_name","name","email","phone","department","building_room","building_address","building_postalCode","mail_city"],
-        "highlight": {"fields": {"name": {}}},
-        "track_scores": "true",
-        "sort": [{"_score": {"order": "desc"}}]
+            "function_score": {
+                "functions": [{
+                    "filter": {
+                        "match": {
+                            "target": "studierende"
+                        }
+                    },
+                    "weight": 1.3
+                }, {
+                    "filter": {
+                        "match": {
+                            "target": "studieninteressierte"
+                        }
+                    },
+                    "weight": 1.3
+                }, {
+                    "filter": {
+                        "match": {
+                            "content_type": "press_archives"
+                        }
+                    },
+                    "weight": 0.5
+                }],
+                "score_mode": "sum",
+                "query": {
+                    "bool": {
+                        "filter": [{
+                            "terms": {
+                                "content_type.keyword": ["employee"]
+                            }
+                        }, {
+                            "terms": {
+                                "langCode.keyword": ["DE"]
+                            }
+                        }],
+                        "must": [{
+                            "term": {
+                                "availableForSearch": {
+                                    "value": "true"
+                                }
+                            }
+                        }, {
+                            "query_string": {
+                                "fields": ["title^2.0", "keywords^2.0", "short_text^1.5", "details_text", "section_headline", "section.infobox", "section.chart_teaser", "section.accordeon^0.5",
+                                    "section.content^0.5", "section.content_table^0.5", "model", "areasofexpertise", "subexpertise", "degree", "firstsemester", "content", "heading", "sub_heading",
+                                    "abstract", "message", "attachment.title", "attachment.keywords", "first_name", "name", "department", "mail_city"
+                                ],
+                                "query": queryName,
+                                "default_operator": "AND",
+                                "allow_leading_wildcard": "true"
+                            }
+                        }]
+                    }
+                }
+            }
+        },
+        "_source": ["first_name", "name", "email", "phone", "department", "building_room", "building_address", "building_postalCode", "mail_city", "title", "short_text", "websiteUrl",
+            "breadcrumb", "internal", "content_type", "target", "heading", "sub_heading", "published", "abstarct", "message", "location", "date"
+        ],
+        "from": 0,
+        "sort": [{
+            "_score": {
+                "order": "desc"
+            }
+        }],
+        "aggs": {
+            "filter.content_type": {
+                "terms": {
+                    "field": "content_type.keyword",
+                    "size": 100,
+                    "missing": "",
+                    "min_doc_count": 0,
+                    "order": {
+                        "_key": "asc"
+                    }
+                }
+            },
+            "filter.location": {
+                "terms": {
+                    "field": "location.keyword",
+                    "size": 100,
+                    "missing": "",
+                    "min_doc_count": 0,
+                    "order": {
+                        "_key": "asc"
+                    }
+                }
+            },
+            "filter.target": {
+                "terms": {
+                    "field": "target.keyword",
+                    "size": 100,
+                    "missing": "",
+                    "min_doc_count": 0,
+                    "order": {
+                        "_key": "asc"
+                    }
+                }
+            }
+        }
     }
-    
+    """TMP-HOTFIX END"""
+
     response = requests.post(fhSwfSearchUrl, data = json.dumps(queryPayload), headers = requestHeaders)
     
     if not response.status_code == 200:
